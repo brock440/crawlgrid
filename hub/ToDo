@@ -1,0 +1,6 @@
+HUB
+-1 Need a code that translates the BA commands to JSON format
+-2 Need a code that transfers this JSON format to available systems (API)
+SPOKE
+-3 Need a code that translates JSON format back to BA commands
+-4 Need a code that execute those BA commands
