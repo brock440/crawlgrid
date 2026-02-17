@@ -4,12 +4,14 @@ import json
 from DrissionPage import ChromiumPage, ChromiumOptions
 import psutil
 
+REGISTRY_FILE = "browser_registry.json"
+
 class BrowserManager:
     def __init__(self):
         self._ensure_registry_exists()
 
     def _ensure_registry_exists(self):
-        if not os.path.exists(REGISTRY_FILE):
+        if not os.path.exists("REGISTRY_FILE"):
             self._save_registry({})
 
     def _load_registry(self) -> dict:
@@ -138,7 +140,38 @@ class BrowserManager:
         except Exception as e:
             return {"status": "error", "message": f"Tab Launch failed: {str(e)}"}
 
-    def get_active_ports(self) -> List[int]:
+    def get_active_ports(self):
         registry = self._load_registry()
         # Returns a list of keys (ports) as integers
         return [int(p) for p in registry.keys()]
+    
+    def cleanup_all_resources(self):
+        """Kills all processes listed in the registry."""
+        registry = self._load_registry()
+        ports = list(registry.keys())
+        
+        if not ports:
+            print("Registry empty. No resources to clean up.")
+            return
+
+        print(f"Found {len(ports)} active browser instances. Cleaning up...")
+        
+        for port in ports:
+            try:
+                pid = registry[port]["process_id"]
+                
+                # Kill process tree
+                parent = psutil.Process(pid)
+                for child in parent.children(recursive=True):
+                    child.kill()
+                parent.kill()
+                
+                print(f"Killed process {pid} (Port {port})")
+                
+            except psutil.NoSuchProcess:
+                print(f"Process {pid} (Port {port}) already dead.")
+            except Exception as e:
+                print(f"Error killing process {pid}: {e}")
+        
+        # Clear registry
+        self._save_registry({})
